@@ -1,5 +1,20 @@
 {
+  "installCommand": "npm install --include=dev && npm --prefix backend ci && npm --prefix backend run postinstall && npx prisma generate --schema=backend/prisma/schema.prisma",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
   "rewrites": [
+    { "source": "/api/entities/(.*)", "destination": "/api/entities" },
+    { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  ],
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 15
+    },
+    "api/entities.js": {
+      "maxDuration": 30,
+      "includeFiles": "node_modules/.prisma/**,node_modules/@prisma/**,backend/node_modules/.prisma/**,backend/node_modules/@prisma/**"
+    }
+  }
 }

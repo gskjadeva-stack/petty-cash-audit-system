@@ -1,19 +1,23 @@
 # Petty Cash Audit System
 
-Petty cash audit management application with a React frontend (Vercel) and Express + Prisma backend (Render), backed by Supabase PostgreSQL and Supabase Auth.
+Petty cash audit management application with a React frontend and Express + Prisma API, backed by Supabase PostgreSQL and Supabase Auth.
+
+**Production:** https://petty-cash-audit-system.vercel.app
 
 ## Architecture
 
-- **Frontend:** React 18 + Vite 6 + React Router (deployed on Vercel Hobby)
-- **Backend:** Node.js + Express + Prisma (deployed on Render Free Web Service)
-- **Database:** Supabase PostgreSQL
-- **Auth:** Supabase Auth (JWT middleware placeholder on backend)
+- **Frontend:** React 18 + Vite 6 + React Router (Vercel static build)
+- **API:** Express serverless functions on Vercel (`api/index.js` auth, `api/entities.js` CRUD)
+- **Database:** Supabase PostgreSQL via Prisma
+- **Auth:** Supabase Auth (JWT decode placeholder on backend; `ENFORCE_AUTH=false` by default)
+
+Local development runs the Express server on port 3001. Production uses same-origin `/api/*` routes (no separate backend host).
 
 ## Prerequisites
 
 - Node.js 18+
 - A Supabase project with PostgreSQL enabled
-- Supabase Auth configured (email/password or your preferred provider)
+- Supabase Auth configured (email/password)
 
 ## Local Development
 
@@ -36,17 +40,15 @@ PORT=3001
 CORS_ORIGIN=http://localhost:5173
 DATABASE_URL=postgresql://...pooler...6543/postgres?pgbouncer=true
 DIRECT_URL=postgresql://...5432/postgres
-SUPABASE_JWT_SECRET=your-jwt-secret
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ENFORCE_AUTH=false
 ```
 
 ### 2. Install dependencies
 
 ```bash
-# Frontend
 npm install
-
-# Backend
 cd backend && npm install
 ```
 
@@ -54,7 +56,7 @@ cd backend && npm install
 
 ```bash
 cd backend
-npx prisma migrate deploy
+npm run db:migrate
 ```
 
 ### 4. Start servers
@@ -69,30 +71,50 @@ npm run dev
 
 Open http://localhost:5173 and sign in via the `/login` page.
 
-## Deployment
+## Deployment (Vercel Full-Stack)
 
-### Backend (Render Free Web Service)
+Deploy from the project root with the Vercel CLI:
 
-| Setting | Value |
-|---------|-------|
-| Root Directory | `backend` |
-| Build Command | `npm install` |
-| Start Command | `npm start` |
-| Release Command | `npm run db:migrate` |
+```bash
+npx vercel link
+npx vercel --prod
+```
 
-Set all backend environment variables from `.env.example` in the Render dashboard.
+[`vercel.json`](vercel.json) configures the Vite build, SPA rewrites, and API function routing.
 
-### Frontend (Vercel Hobby)
+### Vercel environment variables (Production)
 
-| Setting | Value |
-|---------|-------|
-| Framework Preset | Vite |
-| Build Command | `npm run build` |
-| Output Directory | `dist` |
+| Variable | Value |
+|----------|-------|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon key |
+| `VITE_API_URL` | empty (same-origin API) |
+| `DATABASE_URL` | Supabase pooler URL (port 6543) |
+| `DIRECT_URL` | Supabase session URL (port 5432) |
+| `SUPABASE_URL` | Supabase project URL |
+| `CORS_ORIGIN` | `https://your-app.vercel.app,http://localhost:5173` |
+| `ENFORCE_AUTH` | `false` |
+| `NODE_ENV` | `production` |
 
-Set `VITE_API_URL` to your Render backend URL, plus `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+### Supabase Auth URL configuration
 
-[`vercel.json`](vercel.json) handles SPA client-side routing.
+In Supabase Dashboard → **Authentication** → **URL Configuration**:
+
+- **Site URL:** `https://petty-cash-audit-system.vercel.app`
+- **Redirect URLs:** `https://petty-cash-audit-system.vercel.app/**`, `http://localhost:5173/**`
+
+Or run `node scripts/update-supabase-auth.mjs` with a [Supabase access token](https://supabase.com/dashboard/account/tokens) set as `SUPABASE_ACCESS_TOKEN`.
+
+### Production verification
+
+```bash
+node --env-file=.env.local scripts/prod-smoke-test.mjs
+node scripts/browser-e2e.mjs
+```
+
+### Optional: Render backend
+
+[`render.yaml`](render.yaml) is included for a split frontend/backend setup if you add a GitHub remote and prefer a long-running Express host instead of Vercel serverless.
 
 ## API
 
