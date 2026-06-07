@@ -1,0 +1,53 @@
+{
+  "name": "AuditSchedule",
+  "type": "object",
+  "properties": {
+    "site_office": {
+      "type": "string",
+      "description": "Site office to be audited"
+    },
+    "scheduled_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the last/current audit was scheduled"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "Monthly",
+        "Quarterly",
+        "Semi-Annual",
+        "Annual",
+        "One-time"
+      ],
+      "default": "Monthly",
+      "description": "How often this site should be audited"
+    },
+    "assigned_auditor": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Scheduled",
+        "In Progress",
+        "Completed",
+        "Missed",
+        "Rescheduled"
+      ],
+      "default": "Scheduled"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for scheduling or special remarks"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "site_office",
+    "scheduled_date",
+    "frequency"
+  ]
+}

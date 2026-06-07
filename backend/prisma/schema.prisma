@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model PcaRecord {
+  id                String   @id @default(uuid())
+  record_number     String?
+  title             String
+  site_office       String
+  audit_date        String
+  classification    String
+  issue_type        String?
+  category          String
+  status            String   @default("Open")
+  description       String
+  amount_involved   Float?
+  resolution_date   String?
+  corrective_action String?
+  assigned_to       String?
+  ir_status         String   @default("Not Filed")
+  need_ir_filing    Boolean  @default(false)
+  is_recurring      Boolean  @default(false)
+  created_date      DateTime @default(now())
+  updated_date      DateTime @updatedAt
+
+  @@map("pca_records")
+}
+
+model PcfCashCount {
+  id                     String   @id @default(uuid())
+  tally_number           String?
+  site_office            String
+  audit_date             String
+  auditor_name           String?
+  fund_type              String?
+  revolving_fund         Float
+  beginning_balance      Float    @default(0)
+  beginning_balance_as_of String?
+  total_expense          Float    @default(0)
+  total_expense_as_of    String?
+  bills_1000             Float    @default(0)
+  bills_500              Float    @default(0)
+  bills_200              Float    @default(0)
+  bills_100              Float    @default(0)
+  bills_50               Float    @default(0)
+  bills_20               Float    @default(0)
+  coins_20               Float    @default(0)
+  coins_10               Float    @default(0)
+  coins_5                Float    @default(0)
+  coins_1                Float    @default(0)
+  coins_025              Float    @default(0)
+  coins_010              Float    @default(0)
+  coins_005              Float    @default(0)
+  gcash_amount           Float    @default(0)
+  atm_bank_amount        Float    @default(0)
+  by_hand_amount         Float    @default(0)
+  notes                  String?
+  status                 String   @default("Draft")
+  created_date           DateTime @default(now())
+  updated_date           DateTime @updatedAt
+
+  @@map("pcf_cash_counts")
+}
+
+model PcfDisbursement {
+  id                String   @id @default(uuid())
+  cash_count_id     String
+  reference_number  String
+  date              String
+  description       String?
+  amount            Float
+  type              String
+  remittance_status String   @default("Not Remitted")
+  created_date      DateTime @default(now())
+  updated_date      DateTime @updatedAt
+
+  @@map("pcf_disbursements")
+}
+
+model SiteOffice {
+  id           String   @id @default(uuid())
+  name         String
+  code         String
+  region       String?
+  manager      String?
+  is_active    Boolean  @default(true)
+  created_date DateTime @default(now())
+  updated_date DateTime @updatedAt
+
+  @@map("site_offices")
+}
+
+model Classification {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  is_active    Boolean  @default(true)
+  created_date DateTime @default(now())
+  updated_date DateTime @updatedAt
+
+  @@map("classifications")
+}
+
+model Category {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  is_active    Boolean  @default(true)
+  created_date DateTime @default(now())
+  updated_date DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model Comment {
+  id                String   @id @default(uuid())
+  pca_record_id     String
+  content           String
+  author_name       String?
+  author_role       String?
+  tagged_users      String[] @default([])
+  parent_comment_id String?
+  is_edited         Boolean  @default(false)
+  created_date      DateTime @default(now())
+  updated_date      DateTime @updatedAt
+
+  @@map("comments")
+}
+
+model ActivityLog {
+  id            String   @id @default(uuid())
+  pca_record_id String
+  action_type   String
+  description   String
+  actor_name    String?
+  actor_role    String?
+  old_value     String?
+  new_value     String?
+  created_date  DateTime @default(now())
+  updated_date  DateTime @updatedAt
+
+  @@map("activity_logs")
+}
+
+model Notification {
+  id                String   @id @default(uuid())
+  user_email        String?
+  type              String
+  title             String
+  message           String
+  is_read           Boolean  @default(false)
+  related_record_id String?
+  trigger_event     String?
+  created_date      DateTime @default(now())
+  updated_date      DateTime @updatedAt
+
+  @@map("notifications")
+}
+
+model AuditSchedule {
+  id               String   @id @default(uuid())
+  site_office      String
+  scheduled_date   String
+  frequency        String   @default("Monthly")
+  assigned_auditor String?
+  status           String   @default("Scheduled")
+  reason           String?
+  notes            String?
+  created_date     DateTime @default(now())
+  updated_date     DateTime @updatedAt
+
+  @@map("audit_schedules")
+}
+
+model Finding {
+  id                String   @id @default(uuid())
+  pca_record_id     String
+  issue_description String
+  amount            Float?
+  status            String   @default("Open")
+  notes             String?
+  created_date      DateTime @default(now())
+  updated_date      DateTime @updatedAt
+
+  @@map("findings")
+}

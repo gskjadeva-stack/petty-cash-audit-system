@@ -1,0 +1,49 @@
+{
+  "name": "PCFDisbursement",
+  "type": "object",
+  "properties": {
+    "cash_count_id": {
+      "type": "string"
+    },
+    "reference_number": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "description": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Unliquidated",
+        "Liquidated",
+        "Replenished"
+      ],
+      "description": "Whether this disbursement is unliquidated, liquidated, or replenished"
+    },
+    "remittance_status": {
+      "type": "string",
+      "enum": [
+        "Not Remitted",
+        "GCash",
+        "ATM/Bank",
+        "By Hand"
+      ],
+      "default": "Not Remitted",
+      "description": "Applicable only for Replenished type"
+    }
+  },
+  "required": [
+    "cash_count_id",
+    "reference_number",
+    "date",
+    "amount",
+    "type"
+  ]
+}

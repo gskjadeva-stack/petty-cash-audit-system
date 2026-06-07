@@ -1,0 +1,42 @@
+{
+  "name": "ActivityLog",
+  "type": "object",
+  "properties": {
+    "pca_record_id": {
+      "type": "string"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "Status Change",
+        "Comment Added",
+        "Escalation",
+        "Assignment",
+        "Document Upload",
+        "Created",
+        "Updated",
+        "Finding Added"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "actor_name": {
+      "type": "string"
+    },
+    "actor_role": {
+      "type": "string"
+    },
+    "old_value": {
+      "type": "string"
+    },
+    "new_value": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "pca_record_id",
+    "action_type",
+    "description"
+  ]
+}

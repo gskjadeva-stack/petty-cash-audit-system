@@ -1,0 +1,40 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Informational",
+        "Warning",
+        "Escalation",
+        "Critical",
+        "Action Required"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false
+    },
+    "related_record_id": {
+      "type": "string"
+    },
+    "trigger_event": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "type",
+    "title",
+    "message"
+  ]
+}

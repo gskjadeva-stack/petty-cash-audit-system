@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: petty-cash-audit-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    preDeployCommand: npm run db:migrate
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ENFORCE_AUTH
+        value: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: attachments
+      - key: SUPABASE_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false

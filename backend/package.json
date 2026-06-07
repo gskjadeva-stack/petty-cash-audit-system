@@ -1,0 +1,23 @@
+{
+  "name": "petty-cash-audit-backend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "postinstall": "prisma generate",
+    "db:migrate": "node scripts/run-prisma.js migrate deploy",
+    "db:migrate:dev": "node scripts/run-prisma.js migrate dev",
+    "db:status": "node scripts/run-prisma.js migrate status"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.9.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "prisma": "^6.9.0"
+  }
+}

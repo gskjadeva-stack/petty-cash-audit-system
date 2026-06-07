@@ -1,0 +1,129 @@
+{
+  "name": "PCFCashCount",
+  "type": "object",
+  "properties": {
+    "tally_number": {
+      "type": "string"
+    },
+    "site_office": {
+      "type": "string"
+    },
+    "audit_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "auditor_name": {
+      "type": "string"
+    },
+    "fund_type": {
+      "type": "string",
+      "description": "Type of fund (e.g. Petty Cash Fund, Revolving Fund)"
+    },
+    "revolving_fund": {
+      "type": "number",
+      "description": "Allocated revolving petty cash fund"
+    },
+    "beginning_balance": {
+      "type": "number",
+      "default": 0,
+      "description": "Beginning balance before replenishment"
+    },
+    "beginning_balance_as_of": {
+      "type": "string",
+      "description": "Datetime of beginning balance"
+    },
+    "total_expense": {
+      "type": "number",
+      "default": 0,
+      "description": "Total expense amount"
+    },
+    "total_expense_as_of": {
+      "type": "string",
+      "description": "Datetime of total expense"
+    },
+    "bills_1000": {
+      "type": "number",
+      "default": 0
+    },
+    "bills_500": {
+      "type": "number",
+      "default": 0
+    },
+    "bills_200": {
+      "type": "number",
+      "default": 0
+    },
+    "bills_100": {
+      "type": "number",
+      "default": 0
+    },
+    "bills_50": {
+      "type": "number",
+      "default": 0
+    },
+    "bills_20": {
+      "type": "number",
+      "default": 0
+    },
+    "coins_20": {
+      "type": "number",
+      "default": 0
+    },
+    "coins_10": {
+      "type": "number",
+      "default": 0
+    },
+    "coins_5": {
+      "type": "number",
+      "default": 0
+    },
+    "coins_1": {
+      "type": "number",
+      "default": 0
+    },
+    "coins_025": {
+      "type": "number",
+      "default": 0,
+      "description": "25-centavo coins"
+    },
+    "coins_010": {
+      "type": "number",
+      "default": 0,
+      "description": "10-centavo coins"
+    },
+    "coins_005": {
+      "type": "number",
+      "default": 0,
+      "description": "5-centavo coins"
+    },
+    "gcash_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "atm_bank_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "by_hand_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "By hand remittance amount"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Finalized"
+      ],
+      "default": "Draft"
+    }
+  },
+  "required": [
+    "site_office",
+    "audit_date",
+    "revolving_fund"
+  ]
+}

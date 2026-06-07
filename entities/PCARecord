@@ -1,0 +1,79 @@
+{
+  "name": "PCARecord",
+  "type": "object",
+  "properties": {
+    "record_number": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "site_office": {
+      "type": "string"
+    },
+    "audit_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "classification": {
+      "type": "string"
+    },
+    "issue_type": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Open",
+        "Under Review",
+        "Closed"
+      ],
+      "default": "Open"
+    },
+    "description": {
+      "type": "string"
+    },
+    "amount_involved": {
+      "type": "number"
+    },
+    "resolution_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "corrective_action": {
+      "type": "string"
+    },
+    "assigned_to": {
+      "type": "string"
+    },
+    "ir_status": {
+      "type": "string",
+      "enum": [
+        "Not Filed",
+        "Filed",
+        "Closed"
+      ],
+      "default": "Not Filed"
+    },
+    "need_ir_filing": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this record requires IR filing"
+    },
+    "is_recurring": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "title",
+    "site_office",
+    "audit_date",
+    "classification",
+    "category",
+    "description"
+  ]
+}
