@@ -7,8 +7,9 @@ import { AlertCircle, FileText, CheckCircle2, ArrowRight } from 'lucide-react';
 export default function IRStatusWidget({ records, siteOffices, onRecordUpdated }) {
   const [updating, setUpdating] = useState({});
 
-  // Records that need IR filing (need_ir_filing = true) or have a non-Closed ir_status, excluding closed records
-  const irRecords = records.filter(r => r.status !== 'Closed' && (r.need_ir_filing || r.ir_status === 'Filed' || r.ir_status === 'Not Filed'));
+  const irRecords = records.filter(r =>
+    r.status !== 'Closed' && (r.need_ir_filing === true || r.ir_status === 'Not Filed' || r.ir_status === 'Filed')
+  );
 
   // Group by site office
   const bySite = siteOffices.reduce((acc, site) => {
@@ -137,7 +138,7 @@ export default function IRStatusWidget({ records, siteOffices, onRecordUpdated }
                           }`}>
                           <option value="Not Filed">Not Filed</option>
                           <option value="Filed">Filed</option>
-                          <option value="Closed">Closed</option>
+                          <option value="N/A">N/A</option>
                         </select>
                       )}
                     </div>

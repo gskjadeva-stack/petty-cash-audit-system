@@ -1,0 +1,58 @@
+
+PETTY CASH FUND AUDIT REPORT
+GSDC [SITE NAME]
+1. OBJECTIVE
+The purpose of this petty cash audit is to verify the accuracy, completeness, and proper utilization of petty cash funds, and to ensure that all disbursements are supported with valid documents and comply with company policies.
+
+2. SCOPE OF AUDIT
+The audit of petty cash transactions is done as of [Month Day, Year], including:
+Petty Cash Vouchers (PCV)
+Official Receipts / Supporting Documents
+Cash on hand
+Liquidated and unliquidated expenses
+
+3. AUDIT PROCEDURES
+The following procedures were performed:
+Physical cash count of petty cash on hand
+Reconciliation of cash on hand versus recorded balance
+Review of PCVs and attached receipts
+Verification of approvals and signatures
+Identification of discrepancies and policy deviations
+
+
+
+4. SUMMARY OF FUND AUDIT
+Description
+Amount (PHP)
+Revolving Fund
+[AMOUNT]
+
+Total Liquidated
+[AMOUNT BREAKDOWN]
+Total Unliquidated
+[AMOUNT] 
+Short / (Over)
+[AMOUNT]
+
+5. DETAILED AUDIT FINDINGS
+Missing / Incomplete Attachments
+Some PCVs were noted without official receipts or supporting documents covering the period of [Month Day, Year] – [Month Day, Year]
+Unliquidated Petty Cash Released
+There are outstanding petty cash released that remain unliquidated within and beyond the allowed period.
+Within the allowed period [Month Day, Year] – [Month Day, Year] exactly PHP [AMOUNT].
+Beyond the allowed period [Month Day, Year] – [Month Day, Year] exactly PHP [AMOUNT].
+Over / Short in Cash Count
+A cash [SHORTAGE/OVERAGE/N/A] amounting to PHP [AMOUNT, BOLD] was noted during the physical count.
+Approval Issues
+N/A
+Double encoding / Inconsistent PCV info (Physical Voucher vs Petty Cash Register)
+N/A
+
+6. RECOMMENDATIONS
+Ensure all petty cash disbursements are supported by complete and valid documents.
+Liquidate petty cash within the prescribed period.
+All unliquidated amount covering [Month Year] should be completed until [Month Day, Year.
+Conduct regular petty cash monitoring and surprise cash counts.
+Have a thorough/cross-checking of the PCV against the register for accuracy and correctness of the records.
+ANNEX A:
+

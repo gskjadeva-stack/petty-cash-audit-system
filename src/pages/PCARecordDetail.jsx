@@ -81,6 +81,7 @@ export default function PCARecordDetail() {
     { label: 'Classification', value: record.classification },
     { label: 'Issue Type', value: record.issue_type || '—' },
     { label: 'Assigned To', value: record.assigned_to || '—' },
+    { label: 'Need IR Filing', value: record.need_ir_filing ? 'Yes' : 'No' },
     { label: 'IR Status', value: record.ir_status },
     { label: 'Amount Involved', value: record.amount_involved ? `₱${Number(record.amount_involved).toLocaleString()}` : '—' },
     { label: 'Resolution Date', value: record.resolution_date || '—' },

@@ -54,15 +54,7 @@ export default function Layout() {
       {/* Sidebar */}
       <aside className="w-60 flex-shrink-0 flex flex-col shadow-xl" style={{ backgroundColor: '#1E3A5F' }}>
         <div className="px-5 py-5 border-b border-white/10">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
-              <BarChart3 size={14} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-white font-bold text-sm leading-tight tracking-wide">PCA Audit</h1>
-              <p className="text-white/40 text-[10px] leading-tight">Petty Cash Audit System</p>
-            </div>
-          </div>
+          <p className="text-white/70 text-xs font-semibold leading-tight tracking-wide">Petty Cash Audit System</p>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
@@ -126,9 +118,12 @@ export default function Layout() {
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="h-13 bg-white border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0" style={{ height: '52px' }}>
-          <p className="text-xs text-slate-400 font-medium">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
+          <div className="flex items-center gap-4">
+            <img src="/gsdc4.png" alt="GSDC" className="h-8 object-contain" />
+            <p className="text-xs text-slate-400 font-medium">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
           <div className="flex items-center gap-3">
 
             <div className="relative">

@@ -60,10 +60,6 @@ export default function TrendAnalysis() {
     }, {})
   ).sort(([a], [b]) => a.localeCompare(b)).map(([month, count]) => ({ month, count }));
 
-  const byCategory = Object.entries(
-    filtered.reduce((acc, r) => { if (r.category) acc[r.category] = (acc[r.category] || 0) + 1; return acc; }, {})
-  ).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
-
   const classifCounts = filtered.reduce((acc, r) => { if (r.classification) acc[r.classification] = (acc[r.classification] || 0) + 1; return acc; }, {});
   const systemic = Object.values(classifCounts).filter(c => c >= 3).reduce((a, b) => a + b, 0);
   const isolated = filtered.length - systemic;

@@ -1,13 +1,17 @@
 import jsPDF from 'jspdf';
 
-const LOGO_URL = 'https://media.db.com/images/public/6a13c975955824b5fc495b29/a13fc14e1_gsdc4.png';
+const LOGO_PATH = '/gsdc4.png';
+function logoUrl() {
+  if (typeof window !== 'undefined') return `${window.location.origin}${LOGO_PATH}`;
+  return LOGO_PATH;
+}
 const NAVY = [30, 58, 95];
 
 const fmtPHP = (n) =>
   `PHP ${Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 async function getLogoBase64() {
-  const res = await fetch(LOGO_URL);
+  const res = await fetch(LOGO_PATH);
   const blob = await res.blob();
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -17,7 +21,7 @@ async function getLogoBase64() {
   });
 }
 
-function computeTotals(record, disbursements) {
+export function computeTotals(record, disbursements) {
   const bills =
     (record.bills_1000 || 0) * 1000 + (record.bills_500 || 0) * 500 +
     (record.bills_200 || 0) * 200 + (record.bills_100 || 0) * 100 +
@@ -76,17 +80,6 @@ export async function generatePDF(record, disbursements) {
 
   drawPageHeader();
 
-  // Session info block (no "FUND COMPUTATION WORKSHEET" title)
-  doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(60, 60, 60);
-  doc.text(`Site Office: ${record.site_office || '—'}`, M, y + 4);
-  doc.text(`Tally No.: ${record.tally_number || '—'}`, M + 80, y + 4);
-  doc.text(`Audit Date: ${record.audit_date || '—'}`, M + 135, y + 4);
-  y += 8;
-  doc.text(`Auditor: ${record.auditor_name || '—'}`, M, y + 4);
-  if (record.fund_type) doc.text(`Fund Type: ${record.fund_type}`, M + 80, y + 4);
-  y += 8;
-  doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.3); doc.line(M, y, PW - M, y); y += 5;
-
   const { bills, coins, cashActual, cashDeclared, beginningBalance, totalUnliq, totalLiq, totalRep, totalRepGcash, totalRepAtm, totalRepByHand, totalRepPending, totalExpense, accountable, shortOver, unliqDisbs, liqDisbs, repDisbs } = computeTotals(record, disbursements);
 
   // ── Section header
@@ -116,7 +109,7 @@ export async function generatePDF(record, disbursements) {
   };
 
   // ── Disbursement table
-  const disbTable = (rows, cols) => {
+  const disbTable = (rows, cols, striped = true) => {
     if (!rows.length) {
       checkBreak(7);
       doc.setFontSize(8); doc.setFont('helvetica', 'italic'); doc.setTextColor(150, 150, 150);
@@ -136,7 +129,7 @@ export async function generatePDF(record, disbursements) {
 
     rows.forEach((d, idx) => {
       checkBreak(6);
-      if (idx % 2 === 0) { doc.setFillColor(250, 252, 255); doc.rect(M, y, CW, 5.5, 'F'); }
+      if (striped && idx % 2 === 0) { doc.setFillColor(250, 252, 255); doc.rect(M, y, CW, 5.5, 'F'); }
       doc.setFontSize(7.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 30);
       cols.forEach(c => {
         const text = String(d[c.key] || '');
@@ -180,9 +173,8 @@ export async function generatePDF(record, disbursements) {
     ['Fund Type', record.fund_type || '—', 'Revolving Fund', fmtPHP(record.revolving_fund || 0)],
     ['Beginning Balance', fmtPHP(record.beginning_balance || 0), 'As of', record.beginning_balance_as_of ? record.beginning_balance_as_of.replace('T', ' ') : '—'],
   ];
-  sessionFields.forEach((row, idx) => {
+  sessionFields.forEach((row) => {
     checkBreak(6);
-    if (idx % 2 === 0) { doc.setFillColor(245, 248, 252); doc.rect(M, y, CW, 5.5, 'F'); }
     doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(80, 80, 80);
     doc.text(row[0] + ':', M + 3, y + 3.8);
     doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 30);
@@ -199,13 +191,13 @@ export async function generatePDF(record, disbursements) {
   checkBreak(10);
   doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(185, 28, 28);
   doc.text('Cash Released: UNLIQUIDATED', M + 3, y + 4); y += 7;
-  disbTable(unliqDisbs, disbCols);
+  disbTable(unliqDisbs, disbCols, false);
 
   // Cash Released: Liquidated
   checkBreak(10);
   doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 58, 130);
   doc.text('Cash Released: LIQUIDATED', M + 3, y + 4); y += 7;
-  disbTable(liqDisbs, disbCols);
+  disbTable(liqDisbs, disbCols, false);
 
   // Replenished Fund
   checkBreak(10);
@@ -218,7 +210,7 @@ export async function generatePDF(record, disbursements) {
     { header: 'Remittance', key: 'remittance_status', x: 113, w: 26 },
     { header: 'Amount (PHP)', key: 'amount', x: 140, w: 35, align: 'right' },
   ];
-  disbTable(repDisbs, repCols);
+  disbTable(repDisbs, repCols, false);
 
   if (repDisbs.length > 0) {
     y += 1;
@@ -293,7 +285,7 @@ export async function generatePDF(record, disbursements) {
   sectionHeader('SIGNATORIES');
 
   const signCol = CW / 3;
-  const roles = ['Audited By:', 'Noted By:', 'Audited By:'];
+  const roles = ['Audited By:', 'Noted By:', 'Assisted By:'];
   const startY = y;
 
   roles.forEach((role, i) => {
@@ -331,10 +323,10 @@ export function generateWord(record, disbursements) {
 
   const fmtW = (n) => `PHP ${Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  const disbRows = (rows, includeRemittance = false) => {
+  const disbRows = (rows, includeRemittance = false, striped = true) => {
     if (!rows.length) return `<tr><td colspan="${includeRemittance ? 5 : 4}" style="text-align:center;color:#aaa;font-style:italic;padding:5pt">No entries</td></tr>`;
     const body = rows.map((d, i) => `
-      <tr style="${i % 2 === 0 ? 'background:#f5f8fc;' : ''}">
+      <tr style="${striped && i % 2 === 0 ? 'background:#f5f8fc;' : ''}">
         <td>${d.reference_number || ''}</td>
         <td>${d.date || ''}</td>
         <td>${d.description || ''}</td>
@@ -400,7 +392,7 @@ export function generateWord(record, disbursements) {
 
 <!-- HEADER -->
 <div class="header-wrap">
-  <img src="${LOGO_URL}" style="height:45pt" />
+  <img src="${logoUrl()}" style="height:45pt" />
   <div>
     <div class="company">GREAT SIERRA DEVELOPMENT CORPORATION</div>
     <div class="company-sub">Fund Computation Worksheet</div>
@@ -416,7 +408,7 @@ export function generateWord(record, disbursements) {
     <td class="lbl">Site Office</td><td class="val">${record.site_office || '—'}</td>
     <td class="lbl">Tally No.</td><td class="val">${record.tally_number || '—'}</td>
   </tr>
-  <tr style="background:#f5f8fc">
+  <tr>
     <td class="lbl">Audit Date</td><td class="val">${record.audit_date || '—'}</td>
     <td class="lbl">Auditor</td><td class="val">${record.auditor_name || '—'}</td>
   </tr>
@@ -424,7 +416,7 @@ export function generateWord(record, disbursements) {
     <td class="lbl">Fund Type</td><td class="val">${record.fund_type || '—'}</td>
     <td class="lbl">Revolving Fund</td><td class="val">${fmtW(record.revolving_fund || 0)}</td>
   </tr>
-  <tr style="background:#f5f8fc">
+  <tr>
     <td class="lbl">Beginning Balance</td><td class="val">${fmtW(record.beginning_balance || 0)}</td>
     <td class="lbl">As of</td><td class="val">${record.beginning_balance_as_of ? record.beginning_balance_as_of.replace('T', ' ') : '—'}</td>
   </tr>
@@ -434,21 +426,21 @@ export function generateWord(record, disbursements) {
 <div class="sub-title unliq">Cash Released: UNLIQUIDATED</div>
 <table class="disb">
   <tr><th>Ref. No.</th><th>Date</th><th>Description</th><th style="text-align:right">Amount (PHP)</th></tr>
-  ${disbRows(unliqDisbs)}
+  ${disbRows(unliqDisbs, false, false)}
 </table>
 
 <!-- LIQUIDATED -->
 <div class="sub-title liq">Cash Released: LIQUIDATED</div>
 <table class="disb">
   <tr><th>Ref. No.</th><th>Date</th><th>Description</th><th style="text-align:right">Amount (PHP)</th></tr>
-  ${disbRows(liqDisbs)}
+  ${disbRows(liqDisbs, false, false)}
 </table>
 
 <!-- REPLENISHED -->
 <div class="sub-title rep">Replenished Fund</div>
 <table class="disb">
   <tr><th>Ref. No.</th><th>Date</th><th>Description</th><th>Remittance</th><th style="text-align:right">Amount (PHP)</th></tr>
-  ${disbRows(repDisbs, true)}
+  ${disbRows(repDisbs, true, false)}
 </table>
 ${repDisbs.length > 0 ? `
 <table class="remit-mini">
@@ -507,7 +499,7 @@ ${record.notes ? `
       <div class="sig-line">Department</div>
     </td>
     <td>
-      <div class="sig-label">Audited By:</div>
+      <div class="sig-label">Assisted By:</div>
       <div class="sig-line">Fullname</div>
       <div class="sig-line">Job Position</div>
       <div class="sig-line">Department</div>

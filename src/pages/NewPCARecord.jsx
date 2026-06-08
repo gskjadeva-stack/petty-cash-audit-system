@@ -1,69 +1,16 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '@/api/client';
+import AmountInput from '@/components/AmountInput';
 
 import { AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 
 const INITIAL = {
   title: '', site_office: '', audit_date: '', classification: '', issue_type: '',
   description: '', amount_involved: '',
-  assigned_to: '', ir_status: 'Not Filed', need_ir_filing: false,
+  assigned_to: '', ir_status: 'N/A', need_ir_filing: false,
   resolution_date: '', corrective_action: '',
 };
-
-function AmountInput({ value, onChange, onBlur, className, placeholder }) {
-  const ref = useRef(null);
-
-  // Keep the DOM input in sync only when value changes externally (e.g. on blur format)
-  useEffect(() => {
-    if (ref.current && ref.current !== document.activeElement) {
-      ref.current.value = value;
-    }
-  }, [value]);
-
-  const handleChange = (e) => {
-    const raw = e.target.value.replace(/,/g, '');
-    if (raw !== '' && !/^\d*\.?\d*$/.test(raw)) return;
-    // Format with commas, preserve decimal typing
-    const parts = raw.split('.');
-    const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    const formatted = parts.length > 1 ? intPart + '.' + parts[1] : intPart;
-    // Manually set value to avoid cursor jump
-    const el = e.target;
-    const selStart = el.selectionStart;
-    const prevLen = el.value.length;
-    el.value = formatted;
-    // Restore cursor position accounting for added/removed commas
-    const diff = formatted.length - prevLen;
-    el.setSelectionRange(selStart + diff, selStart + diff);
-    onChange(formatted);
-  };
-
-  const handleBlur = (e) => {
-    const raw = e.target.value.replace(/,/g, '');
-    const n = parseFloat(raw);
-    if (!isNaN(n)) {
-      const formatted = n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      if (ref.current) ref.current.value = formatted;
-      onBlur(formatted);
-    } else if (raw === '') {
-      onBlur('');
-    }
-  };
-
-  return (
-    <input
-      ref={ref}
-      type="text"
-      inputMode="decimal"
-      defaultValue={value}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      className={className}
-      placeholder={placeholder}
-    />
-  );
-}
 
 export default function NewPCARecord() {
   const navigate = useNavigate();
@@ -89,6 +36,14 @@ export default function NewPCARecord() {
     setForm(p => ({ ...p, [k]: v }));
     setErrors(p => p[k] ? { ...p, [k]: null } : p);
   }, []);
+
+  const setNeedIR = (value) => {
+    setForm(p => ({
+      ...p,
+      need_ir_filing: value,
+      ir_status: value ? (p.ir_status === 'N/A' ? 'Not Filed' : p.ir_status) : 'N/A',
+    }));
+  };
 
   const validate = () => {
     const e = {};
@@ -178,7 +133,7 @@ export default function NewPCARecord() {
         </div>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
+      <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5" style={{ overflowAnchor: 'none' }}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <F label="Title" req err={errors.title} span>
             <input className={cls('title')} value={form.title} onChange={e => upd('title', e.target.value)} placeholder="Brief description of the finding" />
@@ -213,25 +168,27 @@ export default function NewPCARecord() {
           <F label="Assigned To" err={errors.assigned_to}>
             <input className={cls('assigned_to')} value={form.assigned_to} onChange={e => upd('assigned_to', e.target.value)} placeholder="Name of assignee" />
           </F>
-          <F label="IR Status" err={errors.ir_status}>
-            <select className={cls('ir_status')} value={form.ir_status} onChange={e => upd('ir_status', e.target.value)}>
-              {['Not Filed', 'Filed', 'Closed'].map(s => <option key={s}>{s}</option>)}
-            </select>
-          </F>
           <F label="Need IR Filing?">
             <div className="flex items-center gap-6 mt-1">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" name="need_ir_filing" checked={form.need_ir_filing === true}
-                  onChange={() => upd('need_ir_filing', true)} className="w-4 h-4 accent-[#1E3A5F]" />
+                  onChange={() => setNeedIR(true)} className="w-4 h-4 accent-[#1E3A5F]" />
                 <span className="text-sm text-slate-700">Yes</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" name="need_ir_filing" checked={form.need_ir_filing === false}
-                  onChange={() => upd('need_ir_filing', false)} className="w-4 h-4 accent-[#1E3A5F]" />
+                  onChange={() => setNeedIR(false)} className="w-4 h-4 accent-[#1E3A5F]" />
                 <span className="text-sm text-slate-700">No</span>
               </label>
             </div>
           </F>
+          {form.need_ir_filing && (
+            <F label="IR Status" err={errors.ir_status}>
+              <select className={cls('ir_status')} value={form.ir_status} onChange={e => upd('ir_status', e.target.value)}>
+                {['Not Filed', 'Filed'].map(s => <option key={s}>{s}</option>)}
+              </select>
+            </F>
+          )}
           <F label="Resolution Date" err={errors.resolution_date}>
             <input type="date" className={cls('resolution_date')} value={form.resolution_date} onChange={e => upd('resolution_date', e.target.value)} />
           </F>

@@ -8,12 +8,12 @@ import { Search, Download, Plus, SlidersHorizontal, X } from 'lucide-react';
 export default function PCARecords() {
   const navigate = useNavigate();
   const [records, setRecords] = useState([]);
-  const [meta, setMeta] = useState({ classifications: [], categories: [], siteOffices: [] });
+  const [meta, setMeta] = useState({ classifications: [], siteOffices: [] });
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [sort, setSort] = useState({ key: 'created_date', dir: -1 });
   const [filters, setFilters] = useState({
-    search: '', status: '', classification: '', category: '',
+    search: '', status: '', classification: '',
     site_office: '', severity: '', ir_status: '', date_from: '', date_to: '',
   });
 
@@ -21,17 +21,16 @@ export default function PCARecords() {
     Promise.all([
       db.entities.PCARecord.list('-created_date', 500),
       db.entities.Classification.list(),
-      db.entities.Category.list(),
       db.entities.SiteOffice.list(),
-    ]).then(([recs, cls, cats, sites]) => {
+    ]).then(([recs, cls, sites]) => {
       setRecords(recs);
-      setMeta({ classifications: cls, categories: cats, siteOffices: sites });
+      setMeta({ classifications: cls, siteOffices: sites });
       setLoading(false);
     });
   }, []);
 
   const set = (key, val) => setFilters(p => ({ ...p, [key]: val }));
-  const clearFilters = () => setFilters({ search: '', status: '', classification: '', category: '', site_office: '', severity: '', ir_status: '', date_from: '', date_to: '' });
+  const clearFilters = () => setFilters({ search: '', status: '', classification: '', site_office: '', severity: '', ir_status: '', date_from: '', date_to: '' });
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
   const filtered = records.filter(r => {
@@ -39,7 +38,6 @@ export default function PCARecords() {
     if (q && !r.title?.toLowerCase().includes(q) && !r.record_number?.toLowerCase().includes(q) && !r.description?.toLowerCase().includes(q)) return false;
     if (filters.status && r.status !== filters.status) return false;
     if (filters.classification && r.classification !== filters.classification) return false;
-    if (filters.category && r.category !== filters.category) return false;
     if (filters.site_office && r.site_office !== filters.site_office) return false;
     if (filters.severity && r.severity !== filters.severity) return false;
     if (filters.ir_status && r.ir_status !== filters.ir_status) return false;
@@ -56,8 +54,8 @@ export default function PCARecords() {
   const toggleSort = (key) => setSort(prev => ({ key, dir: prev.key === key ? -prev.dir : -1 }));
 
   const exportCSV = () => {
-    const headers = ['Record #', 'Title', 'Site Office', 'Classification', 'Category', 'Status', 'Severity', 'Audit Date', 'IR Status', 'Amount'];
-    const rows = sorted.map(r => [r.record_number, r.title, r.site_office, r.classification, r.category, r.status, r.severity, r.audit_date, r.ir_status, r.amount_involved || '']);
+    const headers = ['Record #', 'Title', 'Site Office', 'Classification', 'Status', 'Severity', 'Audit Date', 'IR Status', 'Amount'];
+    const rows = sorted.map(r => [r.record_number, r.title, r.site_office, r.classification, r.status, r.severity, r.audit_date, r.ir_status, r.amount_involved || '']);
     const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -126,7 +124,7 @@ export default function PCARecords() {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 pt-1 border-t border-slate-100">
             {[
               { key: 'status', label: 'Status', opts: ['Open', 'Under Review', 'Closed'] },
-              { key: 'ir_status', label: 'IR Status', opts: ['Not Filed', 'Filed', 'Closed'] },
+              { key: 'ir_status', label: 'IR Status', opts: ['Not Filed', 'Filed', 'N/A'] },
             ].map(({ key, label, opts }) => (
               <select key={key} value={filters[key]} onChange={e => set(key, e.target.value)}
                 className="px-2 py-1.5 text-xs border border-slate-200 rounded-lg text-slate-600 focus:outline-none">

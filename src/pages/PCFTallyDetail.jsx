@@ -4,6 +4,7 @@ import { db } from '@/api/client';
 
 import { ArrowLeft, Plus, Trash2, Save, CheckCircle2, TrendingDown, TrendingUp, Minus, AlertCircle, FileDown, Upload } from 'lucide-react';
 import { generatePDF, generateWord } from '../utils/reportGenerator';
+import AmountInput, { formatAmountDisplay } from '@/components/AmountInput';
 
 const BILLS = [
   { key: 'bills_1000', label: '1,000', value: 1000 },
@@ -93,8 +94,8 @@ export default function PCFTallyDetail() {
         audit_date: rec.audit_date || '',
         auditor_name: rec.auditor_name || '',
         fund_type: rec.fund_type || '',
-        revolving_fund: rec.revolving_fund || '',
-        beginning_balance: rec.beginning_balance || '',
+        revolving_fund: formatAmountDisplay(rec.revolving_fund),
+        beginning_balance: formatAmountDisplay(rec.beginning_balance),
         beginning_balance_as_of: rec.beginning_balance_as_of || '',
         total_expense: rec.total_expense || '',
         total_expense_as_of: rec.total_expense_as_of || '',
@@ -113,11 +114,11 @@ export default function PCFTallyDetail() {
         coins_025: rec.coins_025 || '',
         coins_010: rec.coins_010 || '',
         coins_005: rec.coins_005 || '',
-        gcash_amount: rec.gcash_amount || '',
-        atm_bank_amount: rec.atm_bank_amount || '',
+        gcash_amount: formatAmountDisplay(rec.gcash_amount),
+        atm_bank_amount: formatAmountDisplay(rec.atm_bank_amount),
         by_hand_amount: rec.by_hand_amount || '',
       });
-      setDisbursements(disbs.map(d => ({ ...d, _saved: true })));
+      setDisbursements(disbs.map(d => ({ ...d, amount: formatAmountDisplay(d.amount), _saved: true })));
     }
     setLoading(false);
   }
@@ -346,26 +347,19 @@ export default function PCFTallyDetail() {
                       placeholder="Description" readOnly={d._saved} />
                   </td>
                   <td className="py-1.5 pr-2 text-right">
-                    <input type="text" inputMode="decimal" className="w-full border border-slate-200 rounded px-2 py-1 text-xs text-right focus:outline-none focus:border-[#1E3A5F]"
+                    <AmountInput
                       value={d.amount}
-                      onChange={e => {
-                        const raw = e.target.value.replace(/,/g, '');
-                        if (raw === '' || /^\d*\.?\d*$/.test(raw)) {
-                          const parts = raw.split('.');
-                          const formatted = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (parts.length > 1 ? '.' + parts[1] : '');
-                          updateDisb(i, 'amount', formatted);
+                      onChange={v => updateDisb(i, 'amount', v)}
+                      onBlur={v => {
+                        updateDisb(i, 'amount', v);
+                        if (d._saved && d.id && v !== '') {
+                          const n = parseFloat(parseComma(v));
+                          if (!isNaN(n)) db.entities.PCFDisbursement.update(d.id, { amount: n });
                         }
                       }}
-                      onBlur={e => {
-                        const n = parseFloat(parseComma(e.target.value));
-                        if (!isNaN(n)) {
-                          const formatted = n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                          updateDisb(i, 'amount', formatted);
-                          if (d._saved && d.id) {
-                            db.entities.PCFDisbursement.update(d.id, { amount: n });
-                          }
-                        }
-                      }} />
+                      className="w-full border border-slate-200 rounded px-2 py-1 text-xs text-right focus:outline-none focus:border-[#1E3A5F]"
+                      placeholder="0.00"
+                    />
                   </td>
                   {type === 'Replenished' && (
                     <td className="py-1.5 pr-2">
@@ -519,22 +513,26 @@ export default function PCFTallyDetail() {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
-                  Revolving Fund (₱) <span className="text-red-500">*</span>
+                  Revolving Fund <span className="text-red-500">*</span>
                 </label>
-                <input type="text" inputMode="decimal" placeholder="0.00"
-                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1E3A5F] transition-all ${errors.revolving_fund ? 'border-red-300 bg-red-50' : 'border-slate-200'}`}
+                <AmountInput
                   value={form.revolving_fund}
-                  onChange={e => { const raw = e.target.value.replace(/,/g, ''); if (raw === '' || /^\d*\.?\d*$/.test(raw)) { const p = raw.split('.'); upd('revolving_fund', p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (p.length > 1 ? '.' + p[1] : '')); }}}
-                  onBlur={e => { const n = parseFloat(parseComma(e.target.value)); if (!isNaN(n)) upd('revolving_fund', n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); }} />
+                  onChange={v => upd('revolving_fund', v)}
+                  onBlur={v => upd('revolving_fund', v)}
+                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1E3A5F] transition-all ${errors.revolving_fund ? 'border-red-300 bg-red-50' : 'border-slate-200'}`}
+                  placeholder="0.00"
+                />
                 {errors.revolving_fund && <p className="text-xs text-red-500 mt-1">{errors.revolving_fund}</p>}
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Beginning Balance (₱)</label>
-                <input type="text" inputMode="decimal" placeholder="0.00"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1E3A5F] transition-all"
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Beginning Balance</label>
+                <AmountInput
                   value={form.beginning_balance}
-                  onChange={e => { const raw = e.target.value.replace(/,/g, ''); if (raw === '' || /^\d*\.?\d*$/.test(raw)) { const p = raw.split('.'); upd('beginning_balance', p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (p.length > 1 ? '.' + p[1] : '')); }}}
-                  onBlur={e => { const n = parseFloat(parseComma(e.target.value)); if (!isNaN(n)) upd('beginning_balance', n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); }} />
+                  onChange={v => upd('beginning_balance', v)}
+                  onBlur={v => upd('beginning_balance', v)}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1E3A5F] transition-all"
+                  placeholder="0.00"
+                />
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 mb-1">As of</label>
                 <input type="datetime-local"
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1E3A5F] transition-all"
@@ -621,22 +619,24 @@ export default function PCFTallyDetail() {
             {/* GCash + ATM */}
             <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">GCash Current (₱)</label>
-                <input type="text" inputMode="decimal"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1E3A5F]"
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">GCash Current</label>
+                <AmountInput
                   value={form.gcash_amount}
-                  onChange={e => { const raw = e.target.value.replace(/,/g, ''); if (raw === '' || /^\d*\.?\d*$/.test(raw)) { const p = raw.split('.'); upd('gcash_amount', p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (p.length > 1 ? '.' + p[1] : '')); }}}
-                  onBlur={e => { const n = parseFloat(parseComma(e.target.value)); if (!isNaN(n)) upd('gcash_amount', n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); }}
-                  placeholder="0.00" />
+                  onChange={v => upd('gcash_amount', v)}
+                  onBlur={v => upd('gcash_amount', v)}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1E3A5F]"
+                  placeholder="0.00"
+                />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">ATM / Bank Current (₱)</label>
-                <input type="text" inputMode="decimal"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1E3A5F]"
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">ATM / Bank Current</label>
+                <AmountInput
                   value={form.atm_bank_amount}
-                  onChange={e => { const raw = e.target.value.replace(/,/g, ''); if (raw === '' || /^\d*\.?\d*$/.test(raw)) { const p = raw.split('.'); upd('atm_bank_amount', p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (p.length > 1 ? '.' + p[1] : '')); }}}
-                  onBlur={e => { const n = parseFloat(parseComma(e.target.value)); if (!isNaN(n)) upd('atm_bank_amount', n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); }}
-                  placeholder="0.00" />
+                  onChange={v => upd('atm_bank_amount', v)}
+                  onBlur={v => upd('atm_bank_amount', v)}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1E3A5F]"
+                  placeholder="0.00"
+                />
               </div>
             </div>
             <div className="mt-3 p-3 rounded-xl flex items-center justify-between" style={{ backgroundColor: '#EFF6FF' }}>
@@ -649,13 +649,10 @@ export default function PCFTallyDetail() {
           <Section
             title={<span>Cash Released: <span className="text-red-600 font-bold">UNLIQUIDATED</span></span>}
             action={
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-bold" style={{ color: '#1E3A5F' }}>{fmt(totalUnliquidated)}</span>
-                <label className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-700 cursor-pointer border border-slate-200 rounded-lg px-2 py-1 hover:bg-slate-50 transition-colors">
-                  <Upload size={11} /> Import CSV
-                  <input type="file" accept=".csv" className="hidden" onChange={e => handleCsvImport(e, 'Unliquidated')} />
-                </label>
-              </div>
+              <label className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-700 cursor-pointer border border-slate-200 rounded-lg px-2 py-1 hover:bg-slate-50 transition-colors">
+                <Upload size={11} /> Import CSV
+                <input type="file" accept=".csv" className="hidden" onChange={e => handleCsvImport(e, 'Unliquidated')} />
+              </label>
             }>
             {csvImportWarning && (
               <div className="mb-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
@@ -671,13 +668,10 @@ export default function PCFTallyDetail() {
           <Section
             title={<span>Cash Released: <span className="text-blue-600 font-bold">LIQUIDATED</span></span>}
             action={
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-bold" style={{ color: '#1E3A5F' }}>{fmt(totalLiquidated)}</span>
-                <label className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-700 cursor-pointer border border-slate-200 rounded-lg px-2 py-1 hover:bg-slate-50 transition-colors">
-                  <Upload size={11} /> Import CSV
-                  <input type="file" accept=".csv" className="hidden" onChange={e => handleCsvImport(e, 'Liquidated')} />
-                </label>
-              </div>
+              <label className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-700 cursor-pointer border border-slate-200 rounded-lg px-2 py-1 hover:bg-slate-50 transition-colors">
+                <Upload size={11} /> Import CSV
+                <input type="file" accept=".csv" className="hidden" onChange={e => handleCsvImport(e, 'Liquidated')} />
+              </label>
             }>
             {disbTable(liquidatedList, 'Liquidated')}
           </Section>
@@ -713,24 +707,6 @@ export default function PCFTallyDetail() {
                   <span className="text-sm font-bold text-slate-800">{fmt(num(parseComma(form.revolving_fund)))}</span>
                 </div>
 
-                {/* Cash on Hand (Declared) */}
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-xs font-medium text-slate-600">— Cash on Hand (Declared)</span>
-                  <span className="text-sm font-semibold text-slate-600">{fmt(totalCashDeclared)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] pl-3 font-medium text-slate-400">· Beginning Balance</span>
-                  <span className="text-[11px] font-semibold text-slate-400">{fmt(totalBeginningBalance)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] pl-3 font-medium text-slate-400">· Replenished</span>
-                  <span className="text-[11px] font-semibold text-slate-400">{fmt(totalReplenished)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] pl-3 font-medium text-slate-400">· Total Expense</span>
-                  <span className="text-[11px] font-semibold text-slate-400">({fmt(totalExpense)})</span>
-                </div>
-
                 {/* Cash on Hand (Actual) */}
                 <div className="flex items-center justify-between mt-1">
                   <span className="text-xs font-medium text-slate-600">— Cash on Hand (Actual)</span>
@@ -752,17 +728,6 @@ export default function PCFTallyDetail() {
                   <span className="text-[11px] pl-3 font-medium text-slate-400">· ATM/Bank</span>
                   <span className="text-[11px] font-semibold text-slate-400">{fmt(num(parseComma(form.atm_bank_amount)))}</span>
                 </div>
-
-                {/* COH Variance */}
-                {(() => {
-                  const cohVariance = totalCashDeclared - totalCashActual;
-                  return (
-                    <div className="flex items-center justify-between mt-1 pt-1 border-t border-dashed border-slate-200">
-                      <span className="text-xs font-semibold text-red-600">COH Variance</span>
-                      <span className="text-sm font-bold text-red-600">{cohVariance < 0 ? `(${fmt(Math.abs(cohVariance))})` : fmt(cohVariance)}</span>
-                    </div>
-                  );
-                })()}
 
                 {/* Unliquidated & Liquidated */}
                 <div className="flex items-center justify-between mt-1">

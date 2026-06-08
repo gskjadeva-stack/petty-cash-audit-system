@@ -17,7 +17,7 @@ model PcaRecord {
   audit_date        String
   classification    String
   issue_type        String?
-  category          String
+  category          String?
   status            String   @default("Open")
   description       String
   amount_involved   Float?

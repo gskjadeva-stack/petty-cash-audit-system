@@ -21,9 +21,6 @@
     "issue_type": {
       "type": "string"
     },
-    "category": {
-      "type": "string"
-    },
     "status": {
       "type": "string",
       "enum": [
@@ -54,7 +51,7 @@
       "enum": [
         "Not Filed",
         "Filed",
-        "Closed"
+        "N/A"
       ],
       "default": "Not Filed"
     },
@@ -73,7 +70,6 @@
     "site_office",
     "audit_date",
     "classification",
-    "category",
     "description"
   ]
 }

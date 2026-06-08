@@ -3,11 +3,11 @@ import { db } from '@/api/client';
 
 import { Plus, Trash2, Edit2, Check, X, Shield } from 'lucide-react';
 
-const TABS = ['Classifications', 'Categories', 'Site Offices'];
+const TABS = ['Classifications', 'Site Offices'];
 
 export default function Settings() {
   const [tab, setTab] = useState('Classifications');
-  const [data, setData] = useState({ Classifications: [], Categories: [], 'Site Offices': [] });
+  const [data, setData] = useState({ Classifications: [], 'Site Offices': [] });
   const [loading, setLoading] = useState(true);
   const [newItem, setNewItem] = useState({ name: '', description: '', code: '', region: '', manager: '' });
   const [editId, setEditId] = useState(null);
@@ -16,17 +16,15 @@ export default function Settings() {
   useEffect(() => {
     Promise.all([
       db.entities.Classification.list(),
-      db.entities.Category.list(),
       db.entities.SiteOffice.list(),
-    ]).then(([cls, cats, sites]) => {
-      setData({ Classifications: cls, Categories: cats, 'Site Offices': sites });
+    ]).then(([cls, sites]) => {
+      setData({ Classifications: cls, 'Site Offices': sites });
       setLoading(false);
     });
   }, []);
 
   const entity = () => ({
     Classifications: db.entities.Classification,
-    Categories: db.entities.Category,
     'Site Offices': db.entities.SiteOffice,
   }[tab]);
 

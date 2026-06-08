@@ -16,7 +16,7 @@ export default function Dashboard() {
 
   const loadData = () => {
     Promise.all([
-      db.entities.PCARecord.list('-created_date', 200),
+      db.entities.PCARecord.list('-created_date', 500),
       db.entities.Notification.list('-created_date', 10),
       db.entities.SiteOffice.list('name', 200),
     ]).then(([recs, notifs, sites]) => {
@@ -28,6 +28,17 @@ export default function Dashboard() {
   };
 
   useEffect(() => { loadData(); }, []);
+
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') loadData(); };
+    const onFocus = () => loadData();
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, []);
 
   const now = new Date();
   const kpis = {
