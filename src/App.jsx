@@ -1,7 +1,8 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -18,9 +19,21 @@ import PCFTallyDetail from './pages/PCFTallyDetail';
 import Login from './pages/Login';
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isAuthenticated, authChecked, authError, navigateToLogin } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isLoadingAuth, isAuthenticated, authChecked, authError } = useAuth();
 
-  if (isLoadingAuth) {
+  useEffect(() => {
+    if (isLoadingAuth || !authChecked) return;
+    if (authError?.type === 'auth_required' || !isAuthenticated) {
+      const returnUrl = encodeURIComponent(
+        location.pathname + location.search + location.hash
+      );
+      navigate(`/login?returnUrl=${returnUrl}`, { replace: true });
+    }
+  }, [isLoadingAuth, authChecked, isAuthenticated, authError, navigate]);
+
+  if (isLoadingAuth && !authChecked) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
@@ -28,17 +41,11 @@ const AuthenticatedApp = () => {
     );
   }
 
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      navigateToLogin();
-      return null;
-    }
+  if (authError?.type === 'user_not_registered') {
+    return <UserNotRegisteredError />;
   }
 
-  if (authChecked && !isAuthenticated) {
-    navigateToLogin();
+  if (authError?.type === 'auth_required' || (authChecked && !isAuthenticated)) {
     return null;
   }
 

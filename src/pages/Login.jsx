@@ -2,6 +2,19 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { signInWithPassword } from '@/api/supabase';
 
+function safeReturnUrl(raw) {
+  if (!raw) return '/';
+  try {
+    const decoded = decodeURIComponent(raw);
+    if (decoded.startsWith('/') && !decoded.startsWith('//')) {
+      return decoded;
+    }
+  } catch {
+    // invalid encoding
+  }
+  return '/';
+}
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -16,8 +29,7 @@ export default function Login() {
     setLoading(true);
     try {
       await signInWithPassword(email, password);
-      const returnUrl = searchParams.get('returnUrl') || '/';
-      navigate(returnUrl, { replace: true });
+      navigate(safeReturnUrl(searchParams.get('returnUrl')), { replace: true });
     } catch (err) {
       setError(err.message || 'Login failed');
     } finally {

@@ -14,7 +14,7 @@ export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthe
 
   useEffect(() => {
     if (!authChecked && !isLoadingAuth) {
-      checkUserAuth();
+      checkUserAuth({ showLoading: false });
     }
   }, [authChecked, isLoadingAuth, checkUserAuth]);
 

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/api/supabase';
 import { db } from '@/api/client';
 
@@ -10,58 +10,91 @@ export const AuthProvider = ({ children }) => {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const sessionUserIdRef = useRef(null);
+  const isAuthenticatedRef = useRef(false);
 
   useEffect(() => {
-    checkUserAuth();
+    isAuthenticatedRef.current = isAuthenticated;
+  }, [isAuthenticated]);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        checkUserAuth();
-      } else {
-        setUser(null);
-        setIsAuthenticated(false);
-        setIsLoadingAuth(false);
-        setAuthChecked(true);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const checkUserAuth = async () => {
+  const checkUserAuth = useCallback(async ({ showLoading = false, allowSignOut = true } = {}) => {
     try {
-      setIsLoadingAuth(true);
-      setAuthError(null);
+      if (showLoading) setIsLoadingAuth(true);
+      if (allowSignOut) setAuthError(null);
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        setIsAuthenticated(false);
-        setUser(null);
-        setIsLoadingAuth(false);
+        sessionUserIdRef.current = null;
+        if (allowSignOut) {
+          setIsAuthenticated(false);
+          setUser(null);
+        }
         setAuthChecked(true);
         return;
       }
+
+      sessionUserIdRef.current = session.user?.id ?? null;
 
       const currentUser = await db.auth.me();
       setUser(currentUser);
       setIsAuthenticated(true);
       setAuthChecked(true);
+      setAuthError(null);
     } catch (error) {
       console.error('User auth check failed:', error);
-      setIsAuthenticated(false);
-      setUser(null);
-      setAuthChecked(true);
+      if (allowSignOut) {
+        sessionUserIdRef.current = null;
+        setIsAuthenticated(false);
+        setUser(null);
+        setAuthChecked(true);
 
-      if (error.status === 401 || error.status === 403) {
-        setAuthError({
-          type: 'auth_required',
-          message: 'Authentication required',
-        });
+        if (error.status === 401 || error.status === 403) {
+          setAuthError({
+            type: 'auth_required',
+            message: 'Authentication required',
+          });
+        }
       }
     } finally {
-      setIsLoadingAuth(false);
+      if (showLoading) setIsLoadingAuth(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    checkUserAuth({ showLoading: true });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        sessionUserIdRef.current = session?.user?.id ?? null;
+        return;
+      }
+
+      if (event === 'SIGNED_OUT') {
+        sessionUserIdRef.current = null;
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsLoadingAuth(false);
+        setAuthChecked(true);
+        setAuthError(null);
+        return;
+      }
+
+      if (event === 'TOKEN_REFRESHED') return;
+
+      if (event === 'SIGNED_IN') {
+        if (isAuthenticatedRef.current) return;
+        sessionUserIdRef.current = session?.user?.id ?? null;
+        checkUserAuth({ showLoading: false, allowSignOut: false });
+        return;
+      }
+
+      if (event === 'USER_UPDATED') {
+        checkUserAuth({ showLoading: false, allowSignOut: false });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [checkUserAuth]);
 
   const logout = (shouldRedirect = true) => {
     setUser(null);
