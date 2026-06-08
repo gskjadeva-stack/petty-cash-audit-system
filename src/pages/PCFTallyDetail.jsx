@@ -147,8 +147,8 @@ export default function PCFTallyDetail() {
   const totalRemittedByHand = replenishedList.filter(d => d.remittance_status === 'By Hand').reduce((s, d) => s + num(parseComma(d.amount)), 0);
   const totalNotRemitted = replenishedList.filter(d => d.remittance_status === 'Not Remitted').reduce((s, d) => s + num(parseComma(d.amount)), 0);
   const totalBeginningBalance = num(parseComma(form.beginning_balance));
+  // Fund balance reference only — not used in accountable / short-over tally
   const totalExpense = totalUnliquidated + totalLiquidated;
-  const totalCashDeclared = totalBeginningBalance + totalReplenished - totalExpense;
   const accountable = totalCashActual + totalUnliquidated + totalLiquidated;
   const shortOverage = accountable - num(parseComma(form.revolving_fund));
   const isShort = shortOverage < 0;
@@ -707,7 +707,24 @@ export default function PCFTallyDetail() {
                   <span className="text-sm font-bold text-slate-800">{fmt(num(parseComma(form.revolving_fund)))}</span>
                 </div>
 
-                {/* Cash on Hand (Actual) */}
+                {/* Fund balance reference — separate from accountable tally */}
+                <div className="mt-2 pt-2 border-t border-dashed border-slate-200 space-y-2">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fund Balance Reference</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-600">Beginning Balance</span>
+                    <span className="text-sm font-semibold text-slate-600">{fmt(totalBeginningBalance)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-600">Replenished</span>
+                    <span className="text-sm font-semibold text-slate-600">{fmt(totalReplenished)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-600">Total Expense</span>
+                    <span className="text-sm font-semibold text-slate-600">({fmt(totalExpense)})</span>
+                  </div>
+                </div>
+
+                {/* Cash on Hand (Actual) — tally computation */}
                 <div className="flex items-center justify-between mt-1">
                   <span className="text-xs font-medium text-slate-600">— Cash on Hand (Actual)</span>
                   <span className="text-sm font-semibold text-slate-600">{fmt(totalCashActual)}</span>
