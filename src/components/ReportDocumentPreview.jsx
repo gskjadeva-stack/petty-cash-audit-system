@@ -1,4 +1,10 @@
-import { fmtPHP, fmtDate } from '@/utils/pcaAuditReportGenerator';
+import {
+  fmtPHP,
+  fmtDate,
+  fmtField,
+  formatLiquidatedBreakdown,
+  formatShortOverDisplay,
+} from '@/utils/pcaAuditReportGenerator';
 import { REPORT_PREVIEW_CSS } from '@/utils/reportTemplateStyles';
 
 function FindingText({ text, boldAmount }) {
@@ -15,12 +21,30 @@ function FindingText({ text, boldAmount }) {
   );
 }
 
+function FundTableCell({ label, data }) {
+  if (label === 'Total Liquidated') {
+    const breakdown = formatLiquidatedBreakdown(data.fundSummary.liquidatedBreakdown);
+    if (breakdown.includes('\n')) {
+      return (
+        <span style={{ whiteSpace: 'pre-line', textAlign: 'right', display: 'block' }}>
+          {breakdown}
+        </span>
+      );
+    }
+    return breakdown;
+  }
+  if (label === 'Short / (Over)') return formatShortOverDisplay(data.fundSummary);
+  if (label === 'Revolving Fund') return fmtPHP(data.fundSummary.revolvingFund);
+  if (label === 'Total Unliquidated') return fmtPHP(data.fundSummary.totalUnliquidated);
+  return null;
+}
+
 export default function ReportDocumentPreview({ data }) {
   const fundRows = [
-    ['Revolving Fund', fmtPHP(data.fundSummary.revolvingFund)],
-    ['Total Liquidated', fmtPHP(data.fundSummary.totalLiquidated)],
-    ['Total Unliquidated', fmtPHP(data.fundSummary.totalUnliquidated)],
-    ['Short / (Over)', data.fundSummary.shortOverLabel !== 'N/A' ? fmtPHP(data.fundSummary.shortOver) : 'N/A'],
+    'Revolving Fund',
+    'Total Liquidated',
+    'Total Unliquidated',
+    'Short / (Over)',
   ];
 
   return (
@@ -69,14 +93,21 @@ export default function ReportDocumentPreview({ data }) {
             </tr>
           </thead>
           <tbody>
-            {fundRows.map(([label, val]) => (
+            {fundRows.map((label) => (
               <tr key={label}>
                 <td>{label}</td>
-                <td style={{ textAlign: 'right' }}>{val}</td>
+                <td style={{ textAlign: 'right' }}>
+                  <FundTableCell label={label} data={data} />
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+        {data.discrepancies?.length > 0 && (
+          <p className="discrepancy-note" style={{ fontSize: '9pt', marginTop: '8pt', color: '#92400e' }}>
+            <strong>Discrepancies noted:</strong> {data.discrepancies.join('; ')}
+          </p>
+        )}
 
         <p className="section">5. DETAILED AUDIT FINDINGS</p>
         {data.findings.map(f => (
@@ -118,11 +149,11 @@ export default function ReportDocumentPreview({ data }) {
               {data.annexRecords.map((r, i) => (
                 <tr key={r.id || i}>
                   <td>{i + 1}</td>
-                  <td>{r.record_number || '—'}</td>
-                  <td>{r.classification || '—'}</td>
-                  <td>{r.title || '—'}</td>
+                  <td>{fmtField(r.record_number)}</td>
+                  <td>{fmtField(r.classification)}</td>
+                  <td>{fmtField(r.title)}</td>
                   <td>{fmtDate(r.audit_date)}</td>
-                  <td>{r.amount_involved ? fmtPHP(r.amount_involved) : '—'}</td>
+                  <td>{fmtPHP(r.amount_involved)}</td>
                 </tr>
               ))}
             </tbody>

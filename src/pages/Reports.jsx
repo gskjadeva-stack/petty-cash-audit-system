@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { db } from '@/api/client';
-import { buildReportData, generateAuditPDF, generateAuditWord } from '@/utils/pcaAuditReportGenerator';
+import { buildReportData, generateAuditPDF, generateAuditWord, NO_DATA } from '@/utils/pcaAuditReportGenerator';
 import ReportDocumentPreview from '@/components/ReportDocumentPreview';
-import { FileDown, FileText, AlertCircle } from 'lucide-react';
+import { FileDown, FileText, AlertCircle, AlertTriangle } from 'lucide-react';
 
 export default function Reports() {
   const [pcaRecords, setPcaRecords] = useState([]);
@@ -68,6 +68,8 @@ export default function Reports() {
     generateAuditWord(reportData);
   };
 
+  const fundSummaryMissing = reportData && !reportData.fundSummary.hasPcfTally;
+
   if (loading) return (
     <div className="flex justify-center items-center h-64">
       <div className="w-8 h-8 border-4 border-slate-200 rounded-full animate-spin" style={{ borderTopColor: '#1E3A5F' }} />
@@ -105,7 +107,7 @@ export default function Reports() {
         </div>
         <p className="text-[10px] text-slate-400 flex items-start gap-1.5">
           <AlertCircle size={11} className="mt-0.5 flex-shrink-0" />
-          Finding sections populate from PCA Records whose Classification matches template section names. Fund summary uses the most recent PCF Tally for the selected site.
+          Finding sections populate from PCA Records whose Classification matches template section names. Fund summary uses the most recent PCF Tally for the selected site. Missing fields display {NO_DATA}.
         </p>
         <button onClick={generate} disabled={!filters.site || generating}
           className="px-5 py-2.5 text-sm font-semibold text-white rounded-lg disabled:opacity-50 hover:opacity-90 transition-opacity"
@@ -126,7 +128,12 @@ export default function Reports() {
           <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
             <div>
               <h2 className="font-semibold text-slate-800 text-sm">Petty Cash Fund Audit Report — GSDC {reportData.siteOffice}</h2>
-              <p className="text-xs text-slate-400">As of {reportData.auditAsOf} · {reportData.annexRecords.length} PCA record{reportData.annexRecords.length !== 1 ? 's' : ''}</p>
+              <p className="text-xs text-slate-400">
+                As of {reportData.auditAsOf} · {reportData.annexRecords.length} PCA record{reportData.annexRecords.length !== 1 ? 's' : ''}
+                {reportData.pcfRecord
+                  ? ` · PCF Tally ${reportData.pcfTallyNumber || reportData.pcfRecord.id.slice(0, 8)}`
+                  : ' · No PCF Tally in range'}
+              </p>
             </div>
             <div className="flex gap-2">
               <button onClick={exportWord} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg hover:bg-slate-50">
@@ -139,6 +146,23 @@ export default function Reports() {
               </button>
             </div>
           </div>
+
+          {(fundSummaryMissing || reportData.discrepancies?.length > 0) && (
+            <div className="px-5 py-3 border-b border-amber-100 bg-amber-50 space-y-2">
+              {fundSummaryMissing && (
+                <p className="text-xs text-amber-800 flex items-start gap-1.5">
+                  <AlertCircle size={12} className="mt-0.5 flex-shrink-0" />
+                  Fund summary requires a PCF Tally for the selected site and date range. Fund summary fields will show {NO_DATA}.
+                </p>
+              )}
+              {reportData.discrepancies?.length > 0 && (
+                <p className="text-xs text-amber-800 flex items-start gap-1.5">
+                  <AlertTriangle size={12} className="mt-0.5 flex-shrink-0" />
+                  <span><strong>Discrepancies noted:</strong> {reportData.discrepancies.join('; ')}</span>
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="p-5 max-h-[600px] overflow-y-auto bg-white">
             <ReportDocumentPreview data={reportData} />
