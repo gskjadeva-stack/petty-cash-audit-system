@@ -21,33 +21,40 @@ async function getLogoBase64() {
   });
 }
 
+function parseAmount(v) {
+  if (v == null || v === '') return 0;
+  const n = parseFloat(String(v).replace(/,/g, ''));
+  return Number.isNaN(n) ? 0 : n;
+}
+
 export function computeTotals(record, disbursements) {
   const bills =
-    (record.bills_1000 || 0) * 1000 + (record.bills_500 || 0) * 500 +
-    (record.bills_200 || 0) * 200 + (record.bills_100 || 0) * 100 +
-    (record.bills_50 || 0) * 50 + (record.bills_20 || 0) * 20;
+    parseAmount(record.bills_1000) * 1000 + parseAmount(record.bills_500) * 500 +
+    parseAmount(record.bills_200) * 200 + parseAmount(record.bills_100) * 100 +
+    parseAmount(record.bills_50) * 50 + parseAmount(record.bills_20) * 20;
   const coins =
-    (record.coins_20 || 0) * 20 + (record.coins_10 || 0) * 10 +
-    (record.coins_5 || 0) * 5 + (record.coins_1 || 0) * 1 +
-    (record.coins_025 || 0) * 0.25 + (record.coins_010 || 0) * 0.10 +
-    (record.coins_005 || 0) * 0.05;
-  const cashActual = bills + coins + (record.gcash_amount || 0) + (record.atm_bank_amount || 0) + (record.by_hand_amount || 0);
+    parseAmount(record.coins_20) * 20 + parseAmount(record.coins_10) * 10 +
+    parseAmount(record.coins_5) * 5 + parseAmount(record.coins_1) * 1 +
+    parseAmount(record.coins_025) * 0.25 + parseAmount(record.coins_010) * 0.10 +
+    parseAmount(record.coins_005) * 0.05;
+  const cashActual = bills + coins + parseAmount(record.gcash_amount) + parseAmount(record.atm_bank_amount) + parseAmount(record.by_hand_amount);
   const unliqDisbs = disbursements.filter(d => d.type === 'Unliquidated');
   const liqDisbs = disbursements.filter(d => d.type === 'Liquidated');
   const repDisbs = disbursements.filter(d => d.type === 'Replenished');
-  const totalUnliq = unliqDisbs.reduce((s, d) => s + (d.amount || 0), 0);
-  const totalLiq = liqDisbs.reduce((s, d) => s + (d.amount || 0), 0);
-  const totalRep = repDisbs.reduce((s, d) => s + (d.amount || 0), 0);
-  const totalRepGcash = repDisbs.filter(d => d.remittance_status === 'GCash').reduce((s, d) => s + (d.amount || 0), 0);
-  const totalRepAtm = repDisbs.filter(d => d.remittance_status === 'ATM/Bank').reduce((s, d) => s + (d.amount || 0), 0);
-  const totalRepByHand = repDisbs.filter(d => d.remittance_status === 'By Hand').reduce((s, d) => s + (d.amount || 0), 0);
-  const totalRepPending = repDisbs.filter(d => d.remittance_status === 'Not Remitted').reduce((s, d) => s + (d.amount || 0), 0);
-  const beginningBalance = record.beginning_balance || 0;
+  const totalUnliq = unliqDisbs.reduce((s, d) => s + parseAmount(d.amount), 0);
+  const totalLiq = liqDisbs.reduce((s, d) => s + parseAmount(d.amount), 0);
+  const totalRep = repDisbs.reduce((s, d) => s + parseAmount(d.amount), 0);
+  const totalRepGcash = repDisbs.filter(d => d.remittance_status === 'GCash').reduce((s, d) => s + parseAmount(d.amount), 0);
+  const totalRepAtm = repDisbs.filter(d => d.remittance_status === 'ATM/Bank').reduce((s, d) => s + parseAmount(d.amount), 0);
+  const totalRepByHand = repDisbs.filter(d => d.remittance_status === 'By Hand').reduce((s, d) => s + parseAmount(d.amount), 0);
+  const totalRepPending = repDisbs.filter(d => d.remittance_status === 'Not Remitted').reduce((s, d) => s + parseAmount(d.amount), 0);
+  const beginningBalance = parseAmount(record.beginning_balance);
+  const revolvingFund = parseAmount(record.revolving_fund);
   // Total Expense = Unliquidated + Liquidated
   const totalExpense = totalUnliq + totalLiq;
   const cashDeclared = beginningBalance + totalRep - totalExpense;
   const accountable = cashActual + totalUnliq + totalLiq;
-  const shortOver = accountable - (record.revolving_fund || 0);
+  const shortOver = accountable - revolvingFund;
   return { bills, coins, cashActual, cashDeclared, beginningBalance, totalUnliq, totalLiq, totalRep, totalRepGcash, totalRepAtm, totalRepByHand, totalRepPending, totalExpense, accountable, shortOver, unliqDisbs, liqDisbs, repDisbs };
 }
 
@@ -132,7 +139,7 @@ export async function generatePDF(record, disbursements) {
       if (striped && idx % 2 === 0) { doc.setFillColor(250, 252, 255); doc.rect(M, y, CW, 5.5, 'F'); }
       doc.setFontSize(7.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 30);
       cols.forEach(c => {
-        const text = String(d[c.key] || '');
+        const text = c.key === 'amount' ? fmtPHP(parseAmount(d.amount)) : String(d[c.key] || '');
         if (c.align === 'right') {
           doc.text(text, M + c.x + c.w, y + 3.8, { align: 'right' });
         } else {
@@ -145,7 +152,7 @@ export async function generatePDF(record, disbursements) {
 
     doc.setDrawColor(...NAVY); doc.setLineWidth(0.4); doc.line(M, y, PW - M, y); y += 1;
     const lastCol = cols[cols.length - 1];
-    const total = rows.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+    const total = rows.reduce((s, d) => s + parseAmount(d.amount), 0);
     doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(...NAVY);
     doc.text('TOTAL', M + 3, y + 4);
     doc.text(fmtPHP(total), M + lastCol.x + lastCol.w, y + 4, { align: 'right' });
@@ -170,8 +177,8 @@ export async function generatePDF(record, disbursements) {
   const sessionFields = [
     ['Site Office', record.site_office || '—', 'Tally No.', record.tally_number || '—'],
     ['Audit Date', record.audit_date || '—', 'Auditor', record.auditor_name || '—'],
-    ['Fund Type', record.fund_type || '—', 'Revolving Fund', fmtPHP(record.revolving_fund || 0)],
-    ['Beginning Balance', fmtPHP(record.beginning_balance || 0), 'As of', record.beginning_balance_as_of ? record.beginning_balance_as_of.replace('T', ' ') : '—'],
+    ['Fund Type', record.fund_type || '—', 'Revolving Fund', fmtPHP(parseAmount(record.revolving_fund))],
+    ['Beginning Balance', fmtPHP(parseAmount(record.beginning_balance)), 'As of', record.beginning_balance_as_of ? record.beginning_balance_as_of.replace('T', ' ') : '—'],
   ];
   sessionFields.forEach((row) => {
     checkBreak(6);
@@ -226,27 +233,24 @@ export async function generatePDF(record, disbursements) {
   checkBreak(80);
   sectionHeader('TALLY SUMMARY');
 
-  sRow('Revolving Fund', fmtPHP(record.revolving_fund || 0), { bold: true });
+  sRow('Revolving Fund', fmtPHP(parseAmount(record.revolving_fund)), { bold: true });
   y += 1;
-  sRow('Cash on Hand (Declared)', fmtPHP(cashDeclared), { shade: true });
-  sRow('  · Beginning Balance', fmtPHP(beginningBalance), { indent: 5 });
-  sRow('  · Replenished', fmtPHP(totalRep), { shade: true, indent: 5 });
-  sRow('  · Total Expense', `(${fmtPHP(totalExpense)})`, { indent: 5 });
+  checkBreak(10);
+  doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(120, 120, 120);
+  doc.text('FUND BALANCE REFERENCE', M + 3, y + 4); y += 6;
+  sRow('Beginning Balance', fmtPHP(beginningBalance));
+  sRow('Replenished', fmtPHP(totalRep), { shade: true });
+  sRow('Total Expense', `(${fmtPHP(totalExpense)})`);
   y += 1;
-  sRow('Cash on Hand (Actual)', fmtPHP(cashActual), { shade: false });
+  sRow('— Cash on Hand (Actual)', fmtPHP(cashActual));
   sRow('  · Bills', fmtPHP(bills), { shade: true, indent: 5 });
   sRow('  · Coins', fmtPHP(coins), { indent: 5 });
-  sRow('  · GCash Current', fmtPHP(record.gcash_amount || 0), { shade: true, indent: 5 });
-  sRow('  · ATM/Bank Current', fmtPHP(record.atm_bank_amount || 0), { indent: 5 });
+  sRow('  · GCash', fmtPHP(parseAmount(record.gcash_amount)), { shade: true, indent: 5 });
+  sRow('  · ATM/Bank', fmtPHP(parseAmount(record.atm_bank_amount)), { indent: 5 });
   y += 1;
 
-  // COH Variance
-  const cohVariance = cashDeclared - cashActual;
-  sRow('COH Variance', cohVariance < 0 ? `(${fmtPHP(Math.abs(cohVariance))})` : fmtPHP(cohVariance), { red: true });
-  y += 1;
-
-  sRow('Unliquidated', fmtPHP(totalUnliq), { red: true });
-  sRow('Liquidated', fmtPHP(totalLiq), { shade: true });
+  sRow('— Unliquidated', fmtPHP(totalUnliq), { red: true });
+  sRow('— Liquidated', fmtPHP(totalLiq), { shade: true });
   sRow('Total Accountable', fmtPHP(accountable), { bold: true, topBorder: true });
 
   // Short/Overage box
@@ -316,10 +320,9 @@ export async function generatePDF(record, disbursements) {
 // ─── WORD (.doc via HTML) ───────────────────────────────────────────────────
 
 export function generateWord(record, disbursements) {
-  const { bills, coins, cashActual, cashDeclared, beginningBalance, totalUnliq, totalLiq, totalRep, totalRepGcash, totalRepAtm, totalRepByHand, totalRepPending, totalExpense, accountable, shortOver, unliqDisbs, liqDisbs, repDisbs } = computeTotals(record, disbursements);
+  const { bills, coins, cashActual, beginningBalance, totalUnliq, totalLiq, totalRep, totalRepGcash, totalRepAtm, totalRepByHand, totalRepPending, totalExpense, accountable, shortOver, unliqDisbs, liqDisbs, repDisbs } = computeTotals(record, disbursements);
   const isShort = shortOver < 0;
   const isOver = shortOver > 0;
-  const cohVariance = cashDeclared - cashActual;
 
   const fmtW = (n) => `PHP ${Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -331,9 +334,9 @@ export function generateWord(record, disbursements) {
         <td>${d.date || ''}</td>
         <td>${d.description || ''}</td>
         ${includeRemittance ? `<td>${d.remittance_status || ''}</td>` : ''}
-        <td style="text-align:right">${fmtW(d.amount)}</td>
+        <td style="text-align:right">${fmtW(parseAmount(d.amount))}</td>
       </tr>`).join('');
-    const total = rows.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+    const total = rows.reduce((s, d) => s + parseAmount(d.amount), 0);
     return body + `<tr style="font-weight:bold;border-top:2pt solid #1E3A5F;color:#1E3A5F"><td colspan="${includeRemittance ? 4 : 3}">TOTAL</td><td style="text-align:right">${fmtW(total)}</td></tr>`;
   };
 
@@ -414,10 +417,10 @@ export function generateWord(record, disbursements) {
   </tr>
   <tr>
     <td class="lbl">Fund Type</td><td class="val">${record.fund_type || '—'}</td>
-    <td class="lbl">Revolving Fund</td><td class="val">${fmtW(record.revolving_fund || 0)}</td>
+    <td class="lbl">Revolving Fund</td><td class="val">${fmtW(parseAmount(record.revolving_fund))}</td>
   </tr>
   <tr>
-    <td class="lbl">Beginning Balance</td><td class="val">${fmtW(record.beginning_balance || 0)}</td>
+    <td class="lbl">Beginning Balance</td><td class="val">${fmtW(parseAmount(record.beginning_balance))}</td>
     <td class="lbl">As of</td><td class="val">${record.beginning_balance_as_of ? record.beginning_balance_as_of.replace('T', ' ') : '—'}</td>
   </tr>
 </table>
@@ -454,19 +457,18 @@ ${repDisbs.length > 0 ? `
 <div class="section-title">TALLY SUMMARY</div>
 <table class="summary">
   <tr><th style="width:70%">Description</th><th style="text-align:right">Amount (PHP)</th></tr>
-  <tr class="bold navy"><td>Revolving Fund</td><td style="text-align:right">${fmtW(record.revolving_fund || 0)}</td></tr>
-  <tr class="shade"><td>Cash on Hand (Declared)</td><td style="text-align:right">${fmtW(cashDeclared)}</td></tr>
-  <tr class="indent"><td>&nbsp;&nbsp;&nbsp;· Beginning Balance</td><td style="text-align:right">${fmtW(beginningBalance)}</td></tr>
-  <tr class="shade indent"><td>&nbsp;&nbsp;&nbsp;· Replenished</td><td style="text-align:right">${fmtW(totalRep)}</td></tr>
-  <tr class="indent"><td>&nbsp;&nbsp;&nbsp;· Total Expense</td><td style="text-align:right">(${fmtW(totalExpense)})</td></tr>
-  <tr><td>Cash on Hand (Actual)</td><td style="text-align:right">${fmtW(cashActual)}</td></tr>
+  <tr class="bold navy"><td>Revolving Fund</td><td style="text-align:right">${fmtW(parseAmount(record.revolving_fund))}</td></tr>
+  <tr><td colspan="2" style="font-size:7pt;font-weight:bold;color:#888;padding-top:6pt;border-top:1pt dashed #ccc">FUND BALANCE REFERENCE</td></tr>
+  <tr><td>Beginning Balance</td><td style="text-align:right">${fmtW(beginningBalance)}</td></tr>
+  <tr class="shade"><td>Replenished</td><td style="text-align:right">${fmtW(totalRep)}</td></tr>
+  <tr><td>Total Expense</td><td style="text-align:right">(${fmtW(totalExpense)})</td></tr>
+  <tr><td>— Cash on Hand (Actual)</td><td style="text-align:right">${fmtW(cashActual)}</td></tr>
   <tr class="shade indent"><td>&nbsp;&nbsp;&nbsp;· Bills</td><td style="text-align:right">${fmtW(bills)}</td></tr>
   <tr class="indent"><td>&nbsp;&nbsp;&nbsp;· Coins</td><td style="text-align:right">${fmtW(coins)}</td></tr>
-  <tr class="shade indent"><td>&nbsp;&nbsp;&nbsp;· GCash Current</td><td style="text-align:right">${fmtW(record.gcash_amount || 0)}</td></tr>
-  <tr class="indent"><td>&nbsp;&nbsp;&nbsp;· ATM/Bank Current</td><td style="text-align:right">${fmtW(record.atm_bank_amount || 0)}</td></tr>
-  <tr class="red"><td><strong>COH Variance</strong></td><td style="text-align:right;font-weight:bold">${cohVariance < 0 ? `(${fmtW(Math.abs(cohVariance))})` : fmtW(cohVariance)}</td></tr>
-  <tr class="red"><td>Unliquidated</td><td style="text-align:right">${fmtW(totalUnliq)}</td></tr>
-  <tr class="shade"><td>Liquidated</td><td style="text-align:right">${fmtW(totalLiq)}</td></tr>
+  <tr class="shade indent"><td>&nbsp;&nbsp;&nbsp;· GCash</td><td style="text-align:right">${fmtW(parseAmount(record.gcash_amount))}</td></tr>
+  <tr class="indent"><td>&nbsp;&nbsp;&nbsp;· ATM/Bank</td><td style="text-align:right">${fmtW(parseAmount(record.atm_bank_amount))}</td></tr>
+  <tr class="red"><td>— Unliquidated</td><td style="text-align:right">${fmtW(totalUnliq)}</td></tr>
+  <tr class="shade"><td>— Liquidated</td><td style="text-align:right">${fmtW(totalLiq)}</td></tr>
   <tr class="sep-top"><td>Total Accountable</td><td style="text-align:right">${fmtW(accountable)}</td></tr>
 </table>
 

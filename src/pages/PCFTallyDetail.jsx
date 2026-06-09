@@ -39,6 +39,26 @@ const fmt = (n) => `₱${Number(n || 0).toLocaleString('en-PH', { minimumFractio
 const num = (v) => parseFloat(v) || 0;
 const fmtBlur = (v) => { const n = parseFloat(v); return isNaN(n) ? '' : n.toFixed(2); };
 
+function buildExportPayload(form, currentId, disbursements) {
+  const record = {
+    ...form,
+    id: currentId,
+    revolving_fund: num(parseComma(form.revolving_fund)),
+    beginning_balance: num(parseComma(form.beginning_balance)),
+    gcash_amount: num(parseComma(form.gcash_amount)),
+    atm_bank_amount: num(parseComma(form.atm_bank_amount)),
+    by_hand_amount: num(parseComma(form.by_hand_amount)),
+    bills_1000: num(form.bills_1000), bills_500: num(form.bills_500), bills_200: num(form.bills_200),
+    bills_100: num(form.bills_100), bills_50: num(form.bills_50), bills_20: num(form.bills_20),
+    coins_20: num(form.coins_20), coins_10: num(form.coins_10), coins_5: num(form.coins_5),
+    coins_1: num(form.coins_1), coins_025: num(form.coins_025), coins_010: num(form.coins_010), coins_005: num(form.coins_005),
+  };
+  const disbs = disbursements
+    .filter(d => d.amount !== '' && d.amount != null)
+    .map(d => ({ ...d, amount: num(parseComma(d.amount)) }));
+  return { record, disbs };
+}
+
 function Section({ title, children, action }) {
   return (
     <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
@@ -456,8 +476,8 @@ export default function PCFTallyDetail() {
                 <button
                   onClick={async () => {
                     setGenPDF(true);
-                    const saved = disbursements.filter(d => d._saved);
-                    await generatePDF({ ...form, id: currentId, revolving_fund: parseFloat(parseComma(form.revolving_fund)) || 0, beginning_balance: parseFloat(parseComma(form.beginning_balance)) || 0, gcash_amount: parseFloat(parseComma(form.gcash_amount)) || 0, atm_bank_amount: parseFloat(parseComma(form.atm_bank_amount)) || 0, by_hand_amount: parseFloat(parseComma(form.by_hand_amount)) || 0, bills_1000: parseFloat(form.bills_1000) || 0, bills_500: parseFloat(form.bills_500) || 0, bills_200: parseFloat(form.bills_200) || 0, bills_100: parseFloat(form.bills_100) || 0, bills_50: parseFloat(form.bills_50) || 0, bills_20: parseFloat(form.bills_20) || 0, coins_20: parseFloat(form.coins_20) || 0, coins_10: parseFloat(form.coins_10) || 0, coins_5: parseFloat(form.coins_5) || 0, coins_1: parseFloat(form.coins_1) || 0, coins_025: parseFloat(form.coins_025) || 0, coins_010: parseFloat(form.coins_010) || 0, coins_005: parseFloat(form.coins_005) || 0 }, saved);
+                    const { record: exportRecord, disbs: exportDisbs } = buildExportPayload(form, currentId, disbursements);
+                    await generatePDF(exportRecord, exportDisbs);
                     setGenPDF(false);
                   }}
                   disabled={genPDF}
@@ -467,8 +487,8 @@ export default function PCFTallyDetail() {
                 </button>
                 <button
                   onClick={() => {
-                    const saved = disbursements.filter(d => d._saved);
-                    generateWord({ ...form, id: currentId, revolving_fund: parseFloat(parseComma(form.revolving_fund)) || 0, beginning_balance: parseFloat(parseComma(form.beginning_balance)) || 0, gcash_amount: parseFloat(parseComma(form.gcash_amount)) || 0, atm_bank_amount: parseFloat(parseComma(form.atm_bank_amount)) || 0, by_hand_amount: parseFloat(parseComma(form.by_hand_amount)) || 0, bills_1000: parseFloat(form.bills_1000) || 0, bills_500: parseFloat(form.bills_500) || 0, bills_200: parseFloat(form.bills_200) || 0, bills_100: parseFloat(form.bills_100) || 0, bills_50: parseFloat(form.bills_50) || 0, bills_20: parseFloat(form.bills_20) || 0, coins_20: parseFloat(form.coins_20) || 0, coins_10: parseFloat(form.coins_10) || 0, coins_5: parseFloat(form.coins_5) || 0, coins_1: parseFloat(form.coins_1) || 0, coins_025: parseFloat(form.coins_025) || 0, coins_010: parseFloat(form.coins_010) || 0, coins_005: parseFloat(form.coins_005) || 0 }, saved);
+                    const { record: exportRecord, disbs: exportDisbs } = buildExportPayload(form, currentId, disbursements);
+                    generateWord(exportRecord, exportDisbs);
                   }}
                   className="flex items-center gap-2 px-4 py-2 text-sm font-semibold border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-slate-700">
                   <FileDown size={14} className="text-blue-500" /> Export Word
